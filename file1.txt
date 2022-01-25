@@ -1,0 +1,110 @@
+System.TerminateProcess.TerminateProcessByName ProcessName: $'''EXCEL'''
+Database.Connect ConnectionString: $'''Driver={MySQL ODBC 8.0 UNICODE Driver};Server=127.0.0.1;Port=3306;Database=world;User=root;Password=1234;Option=3;''' Connection=> SQLConnection
+Excel.LaunchExcel.LaunchAndOpen Path: $'''C:\\Users\\kjmin\\Desktop\\중계무역.xlsx''' Visible: True ReadOnly: False LoadAddInsAndMacros: False Instance=> ExcelInstance
+Excel.SetActiveWorksheet.ActivateWorksheetByName Instance: ExcelInstance Name: $'''SAP RAW'''
+Excel.GetFirstFreeColumnRow Instance: ExcelInstance FirstFreeColumn=> FirstFreeColumn FirstFreeRow=> FirstFreeRow
+Excel.ReadFromExcel.ReadCells Instance: ExcelInstance StartColumn: $'''A''' StartRow: 2 EndColumn: FirstFreeColumn - 1 EndRow: FirstFreeRow - 2 ReadAsText: False FirstLineIsHeader: False RangeValue=> ExcelData
+Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''delete from SAP''' Timeout: 30 Result=> QueryResult
+LOOP FOREACH CurrentItem IN ExcelData
+    Text.GetSubtext.GetSubtextFromStartTo Text: CurrentItem[3] NumberOfChars: 10 Subtext=> Subtext
+    Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''Insert into SAP (GAC,`Invoice No.`,`Mercury LC`,`POID`,`POID Desc`,`PO Number`,`Trading CO PO`,`Item`,`Style`,`Ship to ID`,`Nike Plant`,`Invoice Qty`,`CS FOB`,`CS Amount`,`Blank1`,`Blank2`,`Factory FOB`,`Amount`,`Mercury Qty`,`Mercury FOB`,`Nike FOB`,`CFMed FOB1`,`CFMed FOB2`,`Blank3`,`Mode`) values (\'%Subtext%\',\'%CurrentItem[6]%\',\'%CurrentItem[9]%\',\'%CurrentItem[10]%\',\'%CurrentItem[11]%\',\'%CurrentItem[12]%\',\'%CurrentItem[13]%\',\'%CurrentItem[14]%\',\'%CurrentItem[15]%\',\'%CurrentItem[16]%\',\'%CurrentItem[17]%\',\'%CurrentItem[18]%\',\'%CurrentItem[19]%\',\'%CurrentItem[20]%\',\'\',\'\',\'%CurrentItem[23]%\',\'%CurrentItem[24]%\',\'%CurrentItem[21]%\',\'%CurrentItem[22]%\',\'%CurrentItem[25]%\',\'%CurrentItem[26]%\',\'%CurrentItem[27]%\',\'\',\'%CurrentItem[29]%\');''' Timeout: 30 Result=> QueryResult2
+END
+Excel.SetActiveWorksheet.ActivateWorksheetByName Instance: ExcelInstance Name: $'''PEGASUS RAW'''
+Excel.GetFirstFreeColumnRow Instance: ExcelInstance FirstFreeColumn=> FirstFreeColumn FirstFreeRow=> FirstFreeRow
+Excel.ReadFromExcel.ReadCells Instance: ExcelInstance StartColumn: $'''c''' StartRow: 28 EndColumn: FirstFreeColumn - 1 EndRow: FirstFreeRow - 1 ReadAsText: False FirstLineIsHeader: False RangeValue=> ExcelData
+Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''delete from `pegasus raw`''' Timeout: 30 Result=> QueryResult
+LOOP FOREACH CurrentItem2 IN ExcelData
+    Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''Insert into `pegasus raw` (`PO Number`, `PO Ref Number`, `PO Item`, `FX Adjustment date`, `FX Adjustment / Total`, `Total Qty1`, `Gross Unit Price (Pre FX Adj)1`, `Net Unit Price (Post FX Adj)1`, `Factory Currency Index 1`, `Seasonal Rate1`, `Daily Payment Spot Rate1`, `FX Differential1`, `Total Qty2`, `Gross Unit Price (Pre FX Adj)2`, `Net Unit Price (Post FX Adj)2`, `Factory Currency Index 2`, `Seasonal Rate2`, `Daily Payment Spot Rate2`, `FX Differential2`, `Total Qty3`, `Gross Unit Price (Pre FX Adj)3`, `Net Unit Price (Post FX Adj)3`, `Factory Currency Index 3`, `Seasonal Rate3`, `Daily Payment Spot Rate3`, `FX Differential3`, `Total Qty4`, `Gross Unit Price (Pre FX Adj)4`, `Net Unit Price (Post FX Adj)4`) values (\'%CurrentItem2[0]%\',\'%CurrentItem2[1]%\',\'%CurrentItem2[2]%\',\'%CurrentItem2[3]%\',\'%CurrentItem2[5]%\',\'%CurrentItem2[12]%\',\'%CurrentItem2[13]%\',\'%CurrentItem2[14]%\',\'%CurrentItem2[8]%\',\'%CurrentItem2[9]%\',\'%CurrentItem2[10]%\',\'%CurrentItem2[11]%\',\'%CurrentItem2[12]%\',\'%CurrentItem2[13]%\',\'%CurrentItem2[14]%\',\'%CurrentItem2[15]%\',\'%CurrentItem2[16]%\',\'%CurrentItem2[17]%\',\'%CurrentItem2[18]%\',\'%CurrentItem2[19]%\',\'%CurrentItem2[20]%\',\'%CurrentItem2[21]%\',\'%CurrentItem2[22]%\',\'%CurrentItem2[23]%\',\'%CurrentItem2[24]%\',\'%CurrentItem2[25]%\',\'%CurrentItem2[26]%\',\'%CurrentItem2[27]%\',\'%CurrentItem2[28]%\');
+''' Timeout: 30 Result=> QueryResult3
+END
+Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''DELETE FROM `pegasus raw` where (`PO Number`= \'\'and `PO Item` = \'\');
+''' Timeout: 30 Result=> QueryResult2
+Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''select * from `pegasus raw`''' Timeout: 30 Result=> QueryResult4
+Variables.RetrieveDataTableColumnIntoList DataTable: QueryResult4 ColumnNameOrIndex: 30 ColumnAsList=> ColumnAsList
+SET x TO 0
+LOOP FOREACH CurrentItem IN QueryResult4
+    IF IsEmpty(CurrentItem[1]) THEN
+        IF IsEmpty(CurrentItem[2]) THEN
+            Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `pegasus raw` set `PO Number` = \'%POnum%\', `PO Ref Number` = \'%Poref%\' where id =\'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult5
+        END
+    ELSE IF IsNotEmpty(CurrentItem[1]) THEN
+        IF IsNotEmpty(CurrentItem[2]) THEN
+            SET POnum TO CurrentItem[1]
+            SET POref TO CurrentItem[2]
+        END
+    END
+    Variables.IncreaseVariable Value: x IncrementValue: 1 IncreasedValue=> x
+END
+Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''select * from `pegasus raw`''' Timeout: 30 Result=> QueryResult5
+Variables.RetrieveDataTableColumnIntoList DataTable: QueryResult5 ColumnNameOrIndex: 30 ColumnAsList=> ColumnAsList
+SET x TO 0
+LOOP FOREACH CurrentItem3 IN QueryResult5
+    IF CurrentItem3[2] = $'''#''' THEN
+        SET BD TO CurrentItem3[1] + CurrentItem3[3]
+        Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `pegasus raw` set `blank` = \'%BD%\' where id = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult6
+    ELSE
+        SET CD TO CurrentItem3[2] + CurrentItem3[3]
+        Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `pegasus raw` set `blank` = \'%CD%\' where id = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult6
+    END
+    Variables.IncreaseVariable Value: x IncrementValue: 1 IncreasedValue=> x
+END
+Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''select * from `sap`''' Timeout: 30 Result=> QueryResult7
+Variables.RetrieveDataTableColumnIntoList DataTable: QueryResult7 ColumnNameOrIndex: 38 ColumnAsList=> ColumnAsList
+SET x TO 0
+LOOP FOREACH CurrentItem4 IN QueryResult7
+    Text.ToNumber Text: CurrentItem4[11] Number=> item11
+    Text.ToNumber Text: CurrentItem4[18] Number=> item18
+    Text.ToNumber Text: CurrentItem4[20] Number=> item20
+    Text.ToNumber Text: CurrentItem4[21] Number=> item21
+    Text.ToNumber Text: CurrentItem4[22] Number=> item22
+    SET Z TO item20 - item21
+    SET AA TO item21 - item22
+    SET AB TO item11 - item18
+    SET AC TO CurrentItem4[5] + CurrentItem4[7]
+    Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `sap` set `Z` = \'%Z%\' where id2 = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult8
+    Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `sap` set `AA` = \'%AA%\' where id2 = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult9
+    Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `sap` set `AB` = \'%AB%\' where id2 = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult10
+    Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `sap` set `AC` = \'%AC%\' where id2 = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult10
+    Variables.IncreaseVariable Value: x IncrementValue: 1 IncreasedValue=> x
+END
+Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''select *
+from sap
+left join `pegasus raw` on sap.AC = `pegasus raw`.blank;''' Timeout: 30 Result=> QueryResult11
+Variables.RetrieveDataTableColumnIntoList DataTable: QueryResult11 ColumnNameOrIndex: 38 ColumnAsList=> ColumnAsList
+SET x TO 0
+LOOP FOREACH CurrentItem5 IN QueryResult11
+    Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `sap` set `AD` = \'%CurrentItem5[43]%\' where id2 = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult10
+    Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `sap` set `AE` = \'%CurrentItem5[44]%\' where id2 = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult10
+    Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `sap` set `AF` = \'%CurrentItem5[45]%\' where id2 = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult10
+    Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `sap` set `AG` = \'%CurrentItem5[46]%\' where id2 = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult10
+    Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `sap` set `AH` = \'%CurrentItem5[47]%\' where id2 = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult10
+    Variables.IncreaseVariable Value: x IncrementValue: 1 IncreasedValue=> x
+END
+Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''select * from sap''' Timeout: 30 Result=> QueryResult12
+Variables.RetrieveDataTableColumnIntoList DataTable: QueryResult12 ColumnNameOrIndex: 38 ColumnAsList=> ColumnAsList2
+SET x TO 0
+LOOP FOREACH CurrentItem6 IN QueryResult12
+    IF IsEmpty(CurrentItem6[32]) THEN
+        IF IsEmpty(CurrentItem6[33]) THEN
+            Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `sap` set `AI` = \'\' where id2 = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult13
+            Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `sap` set `AJ` = \'\' where id2 = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult13
+            Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `sap` set `AK` = \'\' where id2 = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult13
+            Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `sap` set `AL` = \'\' where id2 = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult13
+        END
+    ELSE
+        Text.ToNumber Text: CurrentItem6[32] Number=> AG
+        Text.ToNumber Text: CurrentItem6[33] Number=> AH
+        Text.ToNumber Text: CurrentItem6[22] Number=> W
+        Text.ToNumber Text: CurrentItem6[12] Number=> M
+        Text.ToNumber Text: CurrentItem6[16] Number=> Q
+        SET AI TO AG - W
+        SET AJ TO AH - M
+        SET AK TO Q / W
+        SET AL TO Q / M
+        Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `sap` set `AI` = \'%AI%\' where id2 = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult13
+        Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `sap` set `AJ` = \'%AJ%\' where id2 = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult13
+        Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `sap` set `AK` = \'%AK%\' where id2 = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult13
+        Database.ExecuteSqlStatement.Execute Connection: SQLConnection Statement: $'''update `sap` set `AL` = \'%AL%\' where id2 = \'%ColumnAsList[x]%\';''' Timeout: 30 Result=> QueryResult13
+    END
+    Variables.IncreaseVariable Value: x IncrementValue: 1 IncreasedValue=> x
+END
