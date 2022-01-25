@@ -1,3 +1,4 @@
+SET NewVar TO $'''github'''
 System.TerminateProcess.TerminateProcessByName ProcessName: $'''EXCEL'''
 Database.Connect ConnectionString: $'''Driver={MySQL ODBC 8.0 UNICODE Driver};Server=127.0.0.1;Port=3306;Database=world;User=root;Password=1234;Option=3;''' Connection=> SQLConnection
 Excel.LaunchExcel.LaunchAndOpen Path: $'''C:\\Users\\kjmin\\Desktop\\중계무역.xlsx''' Visible: True ReadOnly: False LoadAddInsAndMacros: False Instance=> ExcelInstance
